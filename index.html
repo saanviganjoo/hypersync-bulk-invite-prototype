@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HyperSync · Bulk Invite via CSV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2563EB; --blue-dk:#1D4ED8; --blue-lt:#EFF4FF; --blue-bd:#BFD3FB;
+    --ink:#111827; --ink-2:#4B5563; --ink-3:#6B7280; --line:#E5E7EB; --line-2:#EEF0F3;
+    --page:#F3F5F8; --card:#fff; --head:#F1F2F4;
+    --green:#027A48; --green-bg:#ECFDF3; --green-bd:#A6F4C5;
+    --amber:#B54708; --amber-bg:#FFFAEB; --amber-bd:#FEDF89;
+    --red:#D92D20; --red-bg:#FEF3F2; --red-bd:#FECDCA;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;color:var(--ink);background:var(--page);-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;cursor:pointer}
+  svg{display:block;flex:none}
+  .ico{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- app shell ---------- */
+  .app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+  aside{background:#fff;padding:20px 16px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--line-2);position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+  .brand b{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700}
+  .brand span{font-weight:700;font-size:18px;letter-spacing:.2px}
+  .nav{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;color:#1f2937;font-weight:500;border:1px solid transparent;background:none;text-align:left;width:100%}
+  .nav:hover{background:#f6f7f9}
+  .nav.on{background:var(--blue-lt);border-color:var(--blue-bd);color:var(--blue-dk)}
+  .nav .chev{margin-left:auto;color:var(--ink-3)}
+  aside .sp{flex:1}
+  aside hr{border:0;border-top:1px solid var(--line);margin:8px 4px}
+
+  main{min-width:0}
+  .topbar{display:flex;justify-content:flex-end;align-items:center;gap:20px;padding:14px 32px 10px}
+  .bell{position:relative;color:#111}
+  .bell i{position:absolute;top:-2px;right:-1px;width:8px;height:8px;border-radius:50%;background:#EF4444}
+  .acct{font-size:13px;line-height:1.35;border-left:1px solid var(--line);padding-left:20px}
+  .acct b{display:block;font-size:15px;font-weight:600}
+  .acct span{color:var(--ink-2)}
+
+  .card{background:#fff;border:1px solid var(--line-2);border-radius:16px;margin:0 24px 32px;padding:26px 32px 24px;min-height:calc(100vh - 90px)}
+  .crumb{display:flex;align-items:center;gap:10px;font-size:16px;margin-bottom:34px}
+  .crumb a{color:var(--blue-dk);text-decoration:none;font-weight:500}
+  .crumb .cur{font-weight:500}
+  .sub{display:flex;align-items:center;gap:12px;color:var(--ink-2);margin-bottom:22px;position:relative}
+  .sub b{font-weight:500}
+  .sub .path{display:flex;gap:8px;align-items:center;flex:1;font-size:15px}
+  .sub .path em{font-style:normal;color:#9CA3AF}
+  .dots{width:38px;height:38px;border-radius:9px;border:1px solid transparent;background:none;display:grid;place-items:center}
+  .dots:hover,.dots[aria-expanded=true]{background:#F3F4F6;border-color:var(--line)}
+  .dots:focus-visible,.btn:focus-visible,.mi:focus-visible,.nav:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  .tabs{display:flex;gap:30px;border-bottom:1px solid var(--line);margin-bottom:24px;overflow-x:auto}
+  .tab{padding:6px 0 16px;color:var(--ink-2);font-size:15px;font-weight:500;border:0;background:none;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:8px}
+  .tab.on{color:var(--blue-dk);border-color:var(--blue-dk)}
+  .pill{background:#F0F1F4;border-radius:999px;font-size:13px;padding:4px 9px;color:#111;font-weight:600}
+
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .search{flex:1;max-width:350px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;padding:0 14px;height:44px;color:#9CA3AF}
+  .search input{border:0;outline:0;font:inherit;flex:1;color:var(--ink);background:none}
+  .grow{flex:1}
+  .btn{height:44px;padding:0 20px;border-radius:9px;border:1px solid var(--blue);background:#fff;color:var(--blue-dk);font-weight:500;display:inline-flex;align-items:center;gap:9px;white-space:nowrap}
+  .btn:hover{background:var(--blue-lt)}
+  .btn.pri{background:var(--blue);color:#fff}
+  .btn.pri:hover{background:var(--blue-dk)}
+  .btn.pri[disabled]{background:#A9C0F5;border-color:#A9C0F5;cursor:not-allowed}
+  .btn.ghost{border-color:var(--line);color:var(--ink)}
+  .btn.ghost:hover{background:#F9FAFB}
+  .btn.sm{height:34px;padding:0 14px;font-size:13px}
+
+  /* ---------- table ---------- */
+  .tbl{border:1px solid var(--line);border-radius:10px;overflow:hidden;overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:900px}
+  th{white-space:nowrap;background:var(--head);text-align:left;font-weight:500;padding:16px 14px;font-size:15px;color:#1f2937}
+  td{white-space:nowrap;padding:0 14px;height:70px;border-top:1px solid var(--line);font-size:15px}
+  td.id{padding-left:22px}
+  .cb{width:20px;height:20px;border:1.5px solid #9CA3AF;border-radius:5px;background:#fff;display:inline-block;vertical-align:middle}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-size:13px;font-weight:500;padding:5px 11px;white-space:nowrap;background:#F0F1F4;color:#374151}
+  .chip.green{background:var(--green-bg);color:var(--green)}
+  .chip.amber{background:var(--amber-bg);color:var(--amber)}
+  .chip.red{background:var(--red-bg);color:var(--red)}
+  .chip.blue{background:var(--blue-lt);color:var(--blue-dk)}
+  .chip.grey{background:#F0F1F4;color:#4B5563}
+  .link{color:var(--blue-dk);font-weight:500;border:0;background:none;padding:6px 8px}
+  .inv{height:48px;min-width:92px;padding:0 20px;border-radius:8px;border:1px solid var(--line);background:#fff;color:#4B5563;font-weight:500}
+  .inv:hover:not([disabled]){background:#F9FAFB;border-color:#cfd4dc}
+  .inv[disabled]{color:#B0B6C0;background:#FAFAFB;cursor:not-allowed}
+  .inv.sent{color:var(--green);background:var(--green-bg);border-color:var(--green-bd);cursor:default}
+  .pager{display:flex;align-items:center;gap:10px;margin-top:22px;color:var(--ink-2)}
+  .pg{min-width:36px;height:36px;border-radius:7px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;font-weight:500}
+  .pg.on{border-color:var(--blue);background:var(--blue-lt);color:var(--blue-dk)}
+  .pager .r{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .pager input{width:50px;height:36px;border:1px solid var(--line);border-radius:7px;text-align:center;font:inherit}
+
+  /* ---------- tooltip ---------- */
+  [data-tip]{position:relative}
+  [data-tip]::after{content:attr(data-tip);position:absolute;z-index:60;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(3px);width:max-content;max-width:260px;background:#111827;color:#fff;font-size:12.5px;line-height:1.4;font-weight:400;padding:8px 11px;border-radius:8px;opacity:0;pointer-events:none;transition:.14s;text-align:left;white-space:normal}
+  [data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;transform:translateX(-50%)}
+  [data-tip].tip-l::after{left:auto;right:0;transform:translateY(3px)}
+  [data-tip].tip-l:hover::after{transform:none}
+
+  /* ---------- three-dots drawer ---------- */
+  .menu{position:absolute;right:0;top:46px;width:326px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(16,24,40,.14),0 2px 6px rgba(16,24,40,.06);padding:8px;z-index:30;opacity:0;transform:translateY(-6px) scale(.98);transform-origin:top right;pointer-events:none;transition:.14s}
+  .menu.open{opacity:1;transform:none;pointer-events:auto}
+  .mgrp{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9CA3AF;padding:8px 12px 4px}
+  .mi{display:flex;align-items:center;gap:14px;width:100%;padding:11px 12px;border-radius:8px;border:0;background:none;text-align:left;font-size:15px;color:#1f2937}
+  .mi:hover{background:#F3F4F6}
+  .mi .ico{color:#374151}
+  .mi.blue,.mi.blue .ico{color:var(--blue-dk)}
+  .mi.red,.mi.red .ico{color:var(--red)}
+  .mi .new{margin-left:auto;background:var(--blue-lt);color:var(--blue-dk);font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px}
+  .mi .two{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .mi .two small{font-size:12px;color:var(--ink-3);line-height:1.3}
+  .msep{height:1px;background:var(--line-2);margin:6px 4px}
+  .mrow{display:flex;align-items:center;gap:14px;padding:11px 12px;border-radius:8px}
+  .mrow:hover{background:#F3F4F6}
+  .mrow .ico{color:#374151}
+  .mrow .two{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;font-size:15px}
+  .mrow .two small{font-size:12px;color:var(--ink-3);line-height:1.3}
+  .sw{width:42px;height:24px;border-radius:999px;background:#D1D5DB;border:0;padding:2px;transition:.18s;flex:none;display:flex;align-items:center}
+  .sw i{width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:.18s}
+  .sw[aria-checked=true]{background:var(--blue)}
+  .sw[aria-checked=true] i{transform:translateX(18px)}
+  .sw:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  /* ---------- modal ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(17,24,39,.45);backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;z-index:50;opacity:0;pointer-events:none;transition:.16s}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(16,24,40,.25);transform:translateY(8px) scale(.985);transition:.18s}
+  .scrim.open .modal{transform:none}
+  .mh{padding:22px 24px 14px;display:flex;gap:14px;align-items:flex-start}
+  .mh h2{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em}
+  .mh p{margin:4px 0 0;color:var(--ink-2);font-size:13.5px;line-height:1.5}
+  .x{margin-left:auto;width:34px;height:34px;border-radius:8px;border:0;background:none;display:grid;place-items:center;color:var(--ink-3)}
+  .x:hover{background:#F3F4F6;color:var(--ink)}
+  .mb{padding:4px 24px 20px;overflow:auto;flex:1}
+  .mf{padding:14px 24px;border-top:1px solid var(--line-2);display:flex;gap:10px;align-items:center;justify-content:flex-end;background:#FCFCFD;border-radius:0 0 16px 16px}
+  .mf .note{margin-right:auto;font-size:12.5px;line-height:1.45;color:var(--ink-2);display:flex;align-items:center;gap:8px;max-width:340px}
+  .mf .note .ico{width:16px;height:16px;color:var(--blue-dk)}
+
+  .drop{border:1.5px dashed #B6C2D6;border-radius:12px;background:#FAFBFD;padding:34px 20px;text-align:center;transition:.15s;cursor:pointer}
+  .drop:hover,.drop.over{border-color:var(--blue);background:var(--blue-lt)}
+  .drop:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .drop .up{width:46px;height:46px;border-radius:12px;background:var(--blue-lt);color:var(--blue-dk);display:grid;place-items:center;margin:0 auto 12px}
+  .drop b{display:block;font-size:15px;font-weight:600}
+  .drop b u{color:var(--blue-dk);text-decoration:none}
+  .drop span{display:block;color:var(--ink-3);font-size:12.5px;margin-top:4px}
+  .err{display:none;margin-top:10px;padding:10px 12px;border-radius:9px;background:var(--red-bg);border:1px solid var(--red-bd);color:#B42318;font-size:13px;gap:8px;align-items:flex-start}
+  .err.show{display:flex}
+  .helprow{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:13px;color:var(--ink-2);gap:12px;flex-wrap:wrap}
+  .helprow button{border:0;background:none;color:var(--blue-dk);font-weight:500;padding:0;display:inline-flex;gap:6px;align-items:center}
+  .helprow button:hover{text-decoration:underline}
+  .rule{margin-top:16px;border:1px solid var(--amber-bd);background:var(--amber-bg);border-radius:10px;padding:12px 14px;display:flex;gap:11px;font-size:13px;line-height:1.55;color:#7A2E0E}
+  .rule .ico{color:var(--amber);margin-top:1px;width:17px;height:17px}
+  .rule b{font-weight:600}
+
+  .rv h3{margin:0;font-size:16px;font-weight:700}
+  .rv>p{margin:3px 0 16px;color:var(--ink-3);font-size:13px}
+  .meta{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:16px;margin-bottom:16px}
+  .meta small{display:block;font-size:11.5px;color:var(--ink-3);margin-bottom:4px}
+  .meta b{font-weight:500;font-size:14px;word-break:break-all}
+  .meta b.ok{color:var(--green)} .meta b.bad{color:#D97706}
+  .banner{border:1px solid #F3E3A8;background:#FFFAE8;border-radius:10px;padding:12px 14px;margin-bottom:16px;color:#6B4E00;font-size:13px}
+  .bh{display:flex;align-items:center;gap:10px}
+  .bh .msg{flex:1;line-height:1.45} .bh .msg b{font-weight:700}
+  .bh .ico{width:16px;height:16px;color:#B7791F}
+  .bh .btn.sm{background:#fff;border-color:#E3D6A6;color:#4B3B00}
+  .bh .btn.sm:hover{background:#FFFDF4}
+  .bh .tg{width:30px;height:30px;border:0;background:none;border-radius:7px;display:grid;place-items:center;color:#6B4E00}
+  .bh .tg:hover{background:rgba(0,0,0,.05)}
+  .bh .tg svg{transition:transform .18s}
+  .bh .tg[aria-expanded=false] svg{transform:rotate(180deg)}
+  .steps{list-style:none;margin:14px 0 4px;padding:0;display:flex;flex-direction:column;gap:11px}
+  .steps.hide{display:none}
+  .steps li{display:flex;align-items:center;gap:10px;line-height:1.4}
+  .steps i{font-style:normal;flex:none;width:20px;height:20px;border-radius:5px;border:1px solid #E3D6A6;background:#FFFDF4;display:grid;place-items:center;font-size:11px;font-weight:500}
+  .pv{border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:230px}
+  .pv table{min-width:0}
+  .pv th{position:sticky;top:0;padding:11px 16px;font-size:12.5px;font-weight:600;color:#1f2937;background:#fff;border-bottom:1px solid var(--line);z-index:1;box-shadow:0 1px 0 var(--line)}
+  .pv td{height:auto;padding:12px 16px;font-size:13.5px}
+  .pv th.bad{background:var(--red-bg);color:var(--red)}
+  .pv th .cell{display:inline-flex;align-items:center;gap:8px}
+  .pv th.bad .eid{color:var(--red)}
+  .pv th.bad .ico{width:15px;height:15px;color:var(--red)}
+  .pv td .cell{display:inline-flex;align-items:center;gap:8px}
+  .pv .eid{color:var(--blue-dk);font-weight:600}
+  .pv td.bad{background:var(--red-bg)}
+  .pv td.bad .eid{color:var(--red)}
+  .pv td.bad .ico{width:15px;height:15px;color:var(--red)}
+  .pv td .empty{color:var(--ink-3);font-style:italic}
+  [data-tip].tip-r::after{bottom:auto;top:50%;left:calc(100% + 8px);transform:translateY(-50%)}
+  [data-tip].tip-r:hover::after,[data-tip].tip-r:focus-visible::after{transform:translateY(-50%)}
+
+  .done{text-align:center;padding:26px 10px 8px}
+  .done .ok{width:60px;height:60px;border-radius:50%;background:var(--green-bg);color:var(--green);display:grid;place-items:center;margin:0 auto 14px}
+  .done .ok .ico{width:28px;height:28px;stroke-width:2.2}
+  .done h3{margin:0;font-size:20px;font-weight:700}
+  .done p{margin:6px auto 0;color:var(--ink-2);max-width:420px;line-height:1.55;font-size:14px}
+  .spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#111827;color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;display:flex;gap:10px;align-items:center;opacity:0;pointer-events:none;transition:.2s;z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast .ico{color:#6EE7B7;width:17px;height:17px}
+  .hide{display:none!important}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:minmax(0,1fr)} aside{display:none}
+    .topbar{padding:12px 16px 8px} .crumb{margin-bottom:20px} .menu{width:min(326px,calc(100vw - 56px))}
+    .sub .path{font-size:13px;min-width:0;overflow:hidden;white-space:nowrap}
+    .card{margin:0 12px 24px;padding:20px 16px}
+    .toolbar{flex-wrap:wrap}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V3m0 0L8 7m4-4 4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></symbol>
+    <symbol id="i-freq" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></symbol>
+    <symbol id="i-rules" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+    <symbol id="i-sync" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+    <symbol id="i-off" viewBox="0 0 24 24"><path d="M2 2l20 20M8.5 8.5a5 5 0 0 0 0 7M15.5 15.5a5 5 0 0 0 0-7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 18.4a9 9 0 0 0 0-12.8"/></symbol>
+    <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6m0-6 6 6"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4m0 3h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside>
+    <div class="brand"><b>B</b><span>BANKING</span></div>
+    <button class="nav"><svg class="ico"><use href="#i-file"/></svg>Dashboard</button>
+    <button class="nav on"><svg class="ico"><use href="#i-sync"/></svg>Connections</button>
+    <button class="nav"><svg class="ico"><use href="#i-file"/></svg>Reporting</button>
+    <button class="nav"><svg class="ico"><use href="#i-file"/></svg>Corporates</button>
+    <button class="nav"><svg class="ico"><use href="#i-rules"/></svg>Integrations</button>
+    <button class="nav"><svg class="ico"><use href="#i-file"/></svg>Data Models</button>
+    <button class="nav"><svg class="ico"><use href="#i-send"/></svg>Webhooks</button>
+    <button class="nav"><svg class="ico"><use href="#i-sync"/></svg>Sync Logs</button>
+    <button class="nav"><svg class="ico"><use href="#i-file"/></svg>Organisation</button>
+    <button class="nav"><svg class="ico"><use href="#i-file"/></svg>Audit Logs</button>
+    <button class="nav"><svg class="ico"><use href="#i-rules"/></svg>Settings<span class="chev">›</span></button>
+    <div class="sp"></div><hr>
+    <button class="nav"><svg class="ico"><use href="#i-info"/></svg>Help &amp; Support</button>
+    <button class="nav"><svg class="ico"><use href="#i-file"/></svg>Documentation ↗</button>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="bell"><svg class="ico" style="width:22px;height:22px"><use href="#i-mail"/></svg><i></i></div>
+      <div class="acct"><b>Test Bank</b><span>admin@example.com</span></div>
+    </div>
+
+    <section class="card">
+      <div class="crumb"><a href="#">Connections</a><span>›</span><span class="cur">Connection Details</span></div>
+
+      <div class="sub">
+        <div class="path"><svg class="ico" style="color:#9CA3AF"><use href="#i-pin"/></svg><b>Active Connections</b><em>/</em><b>upload-employees</b></div>
+        <button class="dots" id="dots" aria-haspopup="menu" aria-expanded="false" aria-label="More actions"><svg class="ico" style="width:22px;height:22px"><use href="#i-dots"/></svg></button>
+
+        <!-- three-dots drawer -->
+        <div class="menu" id="menu" role="menu" aria-labelledby="dots">
+          <div class="mgrp">Invites</div>
+          <button class="mi" role="menuitem" id="miBulk">
+            <svg class="ico"><use href="#i-upload"/></svg>
+            <span class="two">Bulk invite via CSV<small>Invite a list of employees, skipping the status check</small></span>
+            <span class="new">New</span>
+          </button>
+          <div class="mrow" role="none">
+            <svg class="ico"><use href="#i-mail"/></svg>
+            <div class="two"><span id="autoLbl">Automated email to employees</span><small id="autoSub">Off · invites are sent manually</small></div>
+            <button class="sw" id="sw" role="switch" aria-checked="false" aria-labelledby="autoLbl"><i></i></button>
+          </div>
+          <div class="msep"></div>
+          <button class="mi" role="menuitem" id="miExport"><svg class="ico"><use href="#i-download"/></svg>Export Analytics</button>
+          <button class="mi" role="menuitem"><svg class="ico"><use href="#i-freq"/></svg>Set Frequency</button>
+          <button class="mi" role="menuitem"><svg class="ico"><use href="#i-rules"/></svg>Set Rules</button>
+          <button class="mi blue" role="menuitem"><svg class="ico"><use href="#i-sync"/></svg>Start Sync</button>
+          <button class="mi" role="menuitem"><svg class="ico"><use href="#i-pin"/></svg>View Mappings</button>
+          <button class="mi" role="menuitem"><svg class="ico"><use href="#i-off"/></svg>Disable Sync</button>
+          <div class="msep"></div>
+          <button class="mi red" role="menuitem"><svg class="ico"><use href="#i-x-circle"/></svg>Terminate Connection</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab">Employees <span class="pill">196</span></button>
+        <button class="tab on">Account Opening Status</button>
+        <button class="tab">Updates <span class="pill">96</span></button>
+        <button class="tab">Rule Update <span class="pill">0</span></button>
+        <button class="tab">Diagnostics</button>
+        <button class="tab">Overview</button>
+        <button class="tab">Edit</button>
+      </div>
+
+      <!-- toolbar: now just search + two actions -->
+      <div class="toolbar">
+        <label class="search"><svg class="ico"><use href="#i-search"/></svg><input placeholder="Search Employee name…" aria-label="Search employee"></label>
+        <span class="grow"></span>
+        <button class="btn pri" id="btnCsv"><svg class="ico"><use href="#i-download"/></svg>Download CSV</button>
+        <button class="btn">Refresh all</button>
+      </div>
+
+      <div class="tbl">
+        <table>
+          <thead><tr>
+            <th style="width:56px;padding-left:22px"><span class="cb"></span></th>
+            <th>Employee ID</th><th>Employee name</th><th>Phone number</th><th>Official Email ID</th><th>Bank Account Status</th><th style="width:130px"></th><th style="width:140px"></th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <div class="pager">
+        <span class="pg">‹</span><span class="pg on">1</span><span class="pg">2</span><span class="pg">3</span><span class="pg">4</span><span>…</span><span class="pg">19</span><span class="pg">›</span>
+        <div class="r">Page <input value="1" aria-label="Page"> <b style="color:var(--blue-dk)">Go</b></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Bulk invite modal -->
+<div class="scrim" id="scrim" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="mh">
+      <div>
+        <h2 id="mTitle">Bulk invite via CSV <span class="qm" data-tip="Anyone listed here is invited anyway." tabindex="0" aria-label="Anyone listed here is invited anyway.">?</span></h2>
+      </div>
+      <button class="x" id="mClose" aria-label="Close"><svg class="ico"><use href="#i-close"/></svg></button>
+    </div>
+
+    <!-- step 1 : upload -->
+    <div class="mb" id="s1">
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload CSV file">
+        <div class="up"><svg class="ico" style="width:22px;height:22px"><use href="#i-upload"/></svg></div>
+        <b>Drag &amp; drop your CSV here, or <u>browse</u></b>
+        <span>.csv · single column headed “Employee ID” · up to 5,000 rows</span>
+      </div>
+      <input type="file" id="file" accept=".csv,text/csv" hidden>
+      <div class="err" id="err"><svg class="ico" style="width:16px;height:16px;margin-top:1px"><use href="#i-alert"/></svg><span id="errTxt"></span></div>
+
+      <div class="helprow">
+        <button id="tpl"><svg class="ico" style="width:15px;height:15px"><use href="#i-download"/></svg>Download CSV template</button>
+      </div>
+    </div>
+
+    <!-- step 2 : review (same pattern as the CSV / SFTP error page) -->
+    <div class="mb hide rv" id="s2">
+      <h3>Review</h3>
+      <p>Review everything below before we send the invites.</p>
+      <div class="meta">
+        <div><small>File</small><b id="mFile"></b></div>
+        <div><small>Total Records</small><b id="mTotal"></b></div>
+        <div><small>Validation Status</small><b id="mStat"></b></div>
+      </div>
+      <div class="banner hide" id="banner">
+        <div class="bh">
+          <svg class="ico"><use href="#i-alert"/></svg>
+          <span class="msg" id="bMsg"></span>
+          <button class="btn ghost sm" id="dlErr"><svg class="ico" style="width:15px;height:15px;color:inherit"><use href="#i-download"/></svg>Download Errored CSV</button>
+          <button class="tg" id="bTog" aria-expanded="true" aria-label="Show or hide fix steps"><svg class="ico"><use href="#i-chev"/></svg></button>
+        </div>
+        <ol class="steps" id="steps">
+          <li><i>1</i>Download the errors.csv file containing only rows with validation errors.</li>
+          <li><i>2</i>Update the highlighted invalid Employee IDs in those rows.</li>
+          <li><i>3</i>Re-upload the complete corrected CSV file (not only the error rows).</li>
+          <li><i>4</i>Keep the column header exactly as “Employee ID”.</li>
+          <li><i>5</i>Keep a single column, with one unique Employee ID per row.</li>
+        </ol>
+      </div>
+      <div class="pv" id="pvWrap"><table>
+        <thead><tr><th id="pvHead">Employee ID</th></tr></thead>
+        <tbody id="pvRows"></tbody>
+      </table></div>
+    </div>
+
+    <!-- step 3 : done -->
+    <div class="mb hide" id="s3">
+      <div class="done">
+        <div class="ok"><svg class="ico"><use href="#i-check"/></svg></div>
+        <h3 id="dTitle">10 invites sent</h3>
+        <p id="dSub">Recorded in Audit Logs. The usual status check was skipped for this upload.</p>
+      </div>
+    </div>
+
+    <div class="mf" id="foot">
+      <button class="btn ghost" id="fCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"><svg class="ico"><use href="#i-check"/></svg><span id="toastTxt"></span></div>
+
+<script>
+/* ------------------------------------------------------------------ data */
+// "Blocked" statuses = the three conditions that normally lock the invite.
+const BLOCKED = ['Onboarding completed','Account active','KYC due'];
+const roster = [
+  {id:'0081',name:'piyush someone', phone:'919934090079',email:'employee81@example.com', status:'Failed to initiate'},
+  {id:'0085',name:'Prateek',        phone:'919934090083',email:'employee85@example.com',   status:''},
+  {id:'0088',name:'Sumit soni',     phone:'919934090086',email:'employee88@example.com',    status:'Failed to initiate'},
+  {id:'0090',name:'Prashant Gupta', phone:'919934090088',email:'employee90@example.com',    status:''},
+  {id:'0092',name:'Ananya Rao',     phone:'919934090091',email:'ananya.rao@uploademp.in',     status:'Account active'},
+  {id:'0094',name:'Rohit Verma',    phone:'919934090093',email:'rohit.verma@uploademp.in',    status:'KYC due'},
+  {id:'0097',name:'Meera Iyer',     phone:'919934090096',email:'meera.iyer@uploademp.in',     status:'Onboarding completed'},
+  {id:'0101',name:'Karan Malhotra', phone:'919934090100',email:'karan.m@uploademp.in',        status:''},
+  {id:'0103',name:'Divya Nair',     phone:'919934090102',email:'divya.nair@uploademp.in',     status:'Account active'},
+  {id:'0106',name:'Sanjay Patel',   phone:'919934090105',email:'sanjay.p@uploademp.in',       status:'Failed to initiate'},
+  {id:'0110',name:'Neha Kulkarni',  phone:'919934090109',email:'neha.k@uploademp.in',         status:'KYC due'},
+  {id:'0112',name:'Vikram Singh',   phone:'919934090111',email:'vikram.s@uploademp.in',       status:''},
+];
+const byId = Object.fromEntries(roster.map(e=>[e.id,e]));
+const invited = new Set();           // ids invited in this session
+let autoEmail = false;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ------------------------------------------------------------ main table */
+const statusChip = s => {
+  if(!s) return '';
+  const cls = {'Failed to initiate':'grey','Account active':'green','KYC due':'amber','Onboarding completed':'blue'}[s]||'grey';
+  return `<span class="chip ${cls}">${esc(s)}</span>`;
+};
+function renderRows(){
+  $('#rows').innerHTML = roster.slice(0,8).map(e=>{
+    const blocked = BLOCKED.includes(e.status);
+    let action;
+    if(invited.has(e.id))
+      action = `<button class="inv sent" disabled>Invited ✓</button>`;
+    else if(blocked)
+      action = `<span data-tip="Can't invite: status is “${esc(e.status)}”. Use Bulk invite via CSV (⋮ menu) to override." class="tip-l" tabindex="0"><button class="inv" disabled>Invite</button></span>`;
+    else action = `<button class="inv" data-one="${e.id}">Invite</button>`;
+    return `<tr>
+      <td style="padding-left:22px"><span class="cb"></span></td>
+      <td class="id">${e.id}</td><td><b style="font-weight:600">${esc(e.name)}</b></td><td>${e.phone}</td><td>${esc(e.email)}</td>
+      <td>${statusChip(e.status)}</td>
+      <td><button class="link">Refresh Now</button></td><td>${action}</td></tr>`;
+  }).join('');
+}
+$('#rows').addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-one]'); if(!b) return;
+  invited.add(b.dataset.one); renderRows(); toast('Invite sent to '+byId[b.dataset.one].name);
+});
+
+/* --------------------------------------------------------- three-dots menu */
+const menu=$('#menu'), dots=$('#dots');
+function setMenu(open){
+  menu.classList.toggle('open',open); dots.setAttribute('aria-expanded',open);
+  if(open) menu.querySelector('.mi').focus();
+}
+dots.addEventListener('click',e=>{e.stopPropagation();setMenu(!menu.classList.contains('open'))});
+document.addEventListener('click',e=>{ if(!menu.contains(e.target)) setMenu(false) });
+menu.addEventListener('keydown',e=>{
+  const items=[...menu.querySelectorAll('.mi,.sw')]; const i=items.indexOf(document.activeElement);
+  if(e.key==='ArrowDown'){e.preventDefault();items[(i+1)%items.length].focus()}
+  if(e.key==='ArrowUp'){e.preventDefault();items[(i-1+items.length)%items.length].focus()}
+});
+
+// Automated email: same toggle as before, now living in the menu (menu stays open)
+$('#sw').addEventListener('click',e=>{
+  e.stopPropagation();
+  autoEmail=!autoEmail;
+  $('#sw').setAttribute('aria-checked',autoEmail);
+  $('#autoSub').textContent = autoEmail ? 'On · eligible employees are emailed automatically' : 'Off · invites are sent manually';
+  toast('Automated email turned '+(autoEmail?'on':'off'));
+});
+$('#miExport').addEventListener('click',()=>{setMenu(false);toast('Analytics export started')});
+$('#btnCsv').addEventListener('click',()=>toast('Employee list downloaded'));
+
+/* ---------------------------------------------------------------- toast */
+let tt; function toast(msg){
+  $('#toastTxt').textContent=msg; const t=$('#toast'); t.classList.add('show');
+  clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ------------------------------------------------------------ bulk modal */
+const scrim=$('#scrim'); let parsed=null;
+function openModal(){ setMenu(false); reset(); scrim.classList.add('open'); scrim.setAttribute('aria-hidden','false'); setTimeout(()=>$('#drop').focus(),50) }
+function closeModal(){ scrim.classList.remove('open'); scrim.setAttribute('aria-hidden','true'); dots.focus() }
+$('#miBulk').addEventListener('click',openModal);
+$('#mClose').addEventListener('click',closeModal);
+scrim.addEventListener('mousedown',e=>{ if(e.target===scrim) closeModal() });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(scrim.classList.contains('open')) closeModal(); else setMenu(false) } });
+
+const ICON_UP='<svg class="ico" style="width:16px;height:16px;color:inherit"><use href="#i-upload"/></svg>';
+function show(step,footer){
+  ['s1','s2','s3'].forEach(s=>$('#'+s).classList.toggle('hide',s!==step));
+  $('#foot').innerHTML = footer || (step==='s3' ? `<button class="btn pri" id="fDone">Done</button>` : `<button class="btn ghost" id="fCancel">Cancel</button>`);
+  const g=id=>document.getElementById(id);
+  g('fCancel')&&(g('fCancel').onclick=closeModal);
+  g('fDone')&&(g('fDone').onclick=closeModal);
+  g('fSend')&&(g('fSend').onclick=send);
+  g('fRe')&&(g('fRe').onclick=()=>{ $('#file').value=''; $('#file').click() });
+}
+function reset(){ parsed=null; $('#file').value=''; $('#err').classList.remove('show'); show('s1') }
+
+/* drop zone */
+const drop=$('#drop');
+drop.addEventListener('click',()=>$('#file').click());
+drop.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#file').click()} });
+['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; f&&readFile(f) });
+$('#file').addEventListener('change',e=>{ const f=e.target.files[0]; f&&readFile(f) });
+
+function fail(msg){ show('s1'); $('#errTxt').textContent=msg; $('#err').classList.add('show') }   // file-level problems (wrong type, empty, too big)
+function readFile(f){
+  $('#err').classList.remove('show');
+  if(!/\.csv$/i.test(f.name)) return fail('That isn’t a .csv file. Export your list as CSV and try again.');
+  if(f.size>5*1024*1024) return fail('This file is over 5 MB. Split it into smaller files and upload them one at a time.');
+  const r=new FileReader(); r.onload=()=>analyse(String(r.result),f.name,f.size); r.readAsText(f);
+}
+
+/* parse + validate: header must be exactly "Employee ID"; IDs must be unique */
+function splitCsv(line){            // handles "quoted, values"
+  const out=[]; let cur='',q=false;
+  for(let i=0;i<line.length;i++){const c=line[i];
+    if(c==='"'){ if(q&&line[i+1]==='"'){cur+='"';i++} else q=!q }
+    else if(c===','&&!q){out.push(cur.trim());cur=''} else cur+=c }
+  out.push(cur.trim()); return out;
+}
+function analyse(text,name,size){
+  if(text.charCodeAt(0)===65279) text=text.slice(1);   // strip BOM
+  const lines=text.split(/\r?\n/).map((l,i)=>({t:l.trim(),n:i+1})).filter(l=>l.t);   // n = row number in the original file
+  if(!lines.length) return fail('The file is empty. Download the template and add your Employee IDs.');
+  const first=splitCsv(lines[0].t);
+  const badHeader = (first.length===1&&first[0]==='Employee ID') ? null : lines[0].t;
+  const body=lines.slice(1).map(l=>splitCsv(l.t));
+  if(!body.length) return fail('We couldn’t find any Employee IDs below the header row.');
+  if(body.length>5000) return fail('This file has '+body.length.toLocaleString()+' rows. The limit is 5,000 per upload.');
+
+  // every problem (header or row) is just an error; row numbers match the original file (header = row 1)
+  const count={}, firstRow={};
+  body.forEach((c,i)=>{ const id=c[0]; if(id){count[id]=(count[id]||0)+1; if(!firstRow[id]) firstRow[id]=lines[i+1].n} });
+  const rows=body.map((c,i)=>{
+    const id=c[0]||''; let err='';
+    if(c.slice(1).some(Boolean)) err='Only the Employee ID column is allowed';
+    else if(!id) err='Employee ID is empty';
+    else if(count[id]>1) err=(lines[i+1].n===firstRow[id]) ? `Duplicate Employee ID (appears ${count[id]} times)` : `Duplicate of row ${firstRow[id]}`;
+    else if(!byId[id]) err='Employee ID not found in this connection';
+    return {n:lines[i+1].n,id,err};
+  });
+  parsed={name,size,rows,errors:rows.filter(r=>r.err),badHeader,hdrN:lines[0].n};
+  renderReview();
+}
+
+function renderReview(){
+  const p=parsed, bad=p.badHeader!==null, invalid=bad||p.errors.length>0;
+  $('#mFile').textContent=p.name;
+  $('#mTotal').textContent=p.rows.length.toLocaleString();
+  const st=$('#mStat'); st.className = invalid?'bad':'ok';
+  st.textContent = invalid ? 'Error Detected' : 'All records valid';
+
+  $('#banner').classList.toggle('hide',!invalid);
+  $('#steps').classList.remove('hide'); $('#bTog').setAttribute('aria-expanded','true');
+  $('#bMsg').innerHTML='<b>CSV content error:</b> Please resolve them to continue.';
+
+  const th=$('#pvHead');        // a wrong header is highlighted like any other invalid value
+  th.className = bad?'bad':'';
+  th.innerHTML = bad
+    ? `<span class="cell"><span class="eid">${esc(p.badHeader)}</span><span data-tip="Row ${p.hdrN}: Header must be exactly “Employee ID”" class="tip-r" tabindex="0"><svg class="ico"><use href="#i-alert"/></svg></span></span>`
+    : 'Employee ID';
+
+  const rows = invalid ? p.errors : p.rows;
+  $('#pvRows').innerHTML = rows.map(r=>`<tr><td class="${r.err?'bad':''}"><span class="cell">${
+      r.id?`<span class="eid">${esc(r.id)}</span>`:'<span class="empty">empty</span>'}${
+      r.err?`<span data-tip="Row ${r.n}: ${esc(r.err)}" class="tip-r" tabindex="0"><svg class="ico"><use href="#i-alert"/></svg></span>`:''}</span></td></tr>`).join('');
+
+  show('s2', invalid
+    ? `<button class="btn ghost" id="fCancel">Cancel</button><button class="btn pri" id="fRe">${ICON_UP}Re-upload CSV</button>`
+    : `<span class="note"><svg class="ico"><use href="#i-info"/></svg><span>${p.rows.length>1?`All ${p.rows.length} employees`:'This employee'} will get an invite link, even if they’re normally blocked.</span></span><button class="btn ghost" id="fCancel">Cancel</button><button class="btn pri" id="fSend">Send ${p.rows.length} invite${p.rows.length>1?'s':''}</button>`);
+}
+$('#bTog').addEventListener('click',()=>{
+  const open=$('#bTog').getAttribute('aria-expanded')==='true';
+  $('#bTog').setAttribute('aria-expanded',!open); $('#steps').classList.toggle('hide',open);
+});
+
+/* send */
+function send(){
+  const list=parsed.rows; const b=$('#fSend'); b.disabled=true; b.innerHTML='<i class="spin"></i>Sending…';
+  setTimeout(()=>{
+    list.forEach(r=>invited.add(r.id)); renderRows();
+    $('#dTitle').textContent=`${list.length} invite${list.length>1?'s':''} sent`;
+    show('s3');
+  },900);
+}
+
+/* downloads */
+function dl(name,text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500) }
+$('#tpl').addEventListener('click',()=>{ dl('bulk_invite_template.csv','Employee ID\n0081\n0092\n'); toast('Template downloaded') });
+$('#dlErr').addEventListener('click',()=>{
+  const q=v=>/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
+  const out=[['Row','Employee ID','Error']];
+  if(parsed.badHeader!==null) out.push([parsed.hdrN,parsed.badHeader,'Header must be exactly “Employee ID”']);
+  parsed.errors.forEach(r=>out.push([r.n,r.id,r.err]));
+  dl('errors.csv',out.map(r=>r.map(q).join(',')).join('\n'));
+});
+
+renderRows();
+</script>
+</body>
+</html>
